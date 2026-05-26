@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --veda-red: #C0350A;
+  --veda-orange: #FF7950;
+  --veda-dark: #303030;
+  --veda-bg: #F5F5F0;
+  --veda-white: #FFFFFF;
+  --veda-overlay: #FFFFFF80;
+  --veda-muted: #5E5E5ECC;
+  --veda-label: #5E6268;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--veda-bg);
+  color: var(--veda-dark);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(192, 53, 10, 0.18);
+}
