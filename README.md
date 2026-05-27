@@ -5,8 +5,8 @@ VedaAI is a full-stack AI assessment creator for Indian schools. It uses a Next.
 ## Architecture
 
 ```text
-+----------------------+        HTTP + WS         +----------------------+
-|      Frontend        | <---------------------> |       Backend        |
++----------------------+        HTTP + WS       +----------------------+
+|      Frontend        | <--------------------> |       Backend        |
 | Next.js 14 + TS      |                        | Express + TS         |
 | Tailwind + Zustand   |                        | MongoDB + Redis      |
 +----------+-----------+                        | BullMQ Worker        |
