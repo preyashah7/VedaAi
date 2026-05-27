@@ -58,6 +58,7 @@ const main = async (): Promise<void> => {
       await AssignmentModel.findByIdAndUpdate(assignmentId, {
         status: 'completed',
         paperId: paperDocument._id,
+        failureReason: '',
       });
 
       const paperId = paperDocument._id.toString();
@@ -73,12 +74,26 @@ const main = async (): Promise<void> => {
 
   worker.on('failed', async (job, error) => {
     if (!job) {
+      console.error('Worker failed without a job payload:', error);
       return;
     }
 
     const assignmentId = job.data.assignmentId as string;
-    await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'failed' });
+    console.error('Paper generation failed', {
+      jobId: job.id,
+      assignmentId,
+      error: error.message,
+      stack: error.stack,
+    });
+    await AssignmentModel.findByIdAndUpdate(assignmentId, {
+      status: 'failed',
+      failureReason: error.message,
+    });
     broadcastToRoom(assignmentId, { type: 'JOB_FAILED', assignmentId, error: error.message });
+  });
+
+  worker.on('error', (error) => {
+    console.error('Worker error', error);
   });
 
   const shutdown = async (): Promise<void> => {

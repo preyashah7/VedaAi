@@ -37,6 +37,9 @@ export const PaperOutput = ({ assignmentId }: PaperOutputProps): JSX.Element => 
     try {
       const assignmentResult = await fetchAssignment(assignmentId);
       setAssignment(assignmentResult);
+      if (assignmentResult.status === 'failed') {
+        setJobStatus('failed');
+      }
       const paperResponse = await fetchAssignmentPaper(assignmentId);
       if ('sections' in paperResponse) {
         setPaper(paperResponse);
@@ -48,6 +51,9 @@ export const PaperOutput = ({ assignmentId }: PaperOutputProps): JSX.Element => 
         setJobStatus('completed');
       } else if (paperResponse.status === 'processing') {
         setJobStatus('processing');
+      } else if (paperResponse.status === 'failed') {
+        setLoadError(paperResponse.failureReason ?? 'Paper generation failed');
+        setJobStatus('failed');
       }
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Failed to load question paper');

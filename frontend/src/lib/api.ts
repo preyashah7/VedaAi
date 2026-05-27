@@ -39,7 +39,7 @@ export const fetchAssignment = async (assignmentId: string): Promise<Assignment>
 
 export const fetchAssignmentPaper = async (assignmentId: string): Promise<GeneratedPaper | AssignmentPaperResponse> => {
   const response = await fetch(`${apiBaseUrl}/api/assignments/${assignmentId}/paper`, { cache: 'no-store' });
-  if (response.status === 202) {
+  if (response.status === 202 || response.status === 409) {
     return (await response.json()) as AssignmentPaperResponse;
   }
 

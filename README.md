@@ -60,6 +60,7 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/vedaai
 REDIS_URL=redis://localhost:6379
 GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.0-flash
 FRONTEND_URL=http://localhost:3000
 ```
 

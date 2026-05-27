@@ -21,6 +21,7 @@ export interface Assignment {
   status: AssignmentStatus;
   jobId?: string;
   paperId?: string;
+  failureReason?: string;
   createdAt?: string;
 }
 

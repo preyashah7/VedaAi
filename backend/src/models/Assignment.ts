@@ -26,6 +26,7 @@ const assignmentSchema = new Schema(
     },
     jobId: { type: String, default: '' },
     paperId: { type: Schema.Types.ObjectId, ref: 'GeneratedPaper', default: null },
+    failureReason: { type: String, default: '' },
   },
   {
     timestamps: true,

@@ -91,6 +91,15 @@ router.get('/:id/paper', async (request: Request, response: Response) => {
     return response.json(paper);
   }
 
+  if (assignment.status === 'failed') {
+    return response.status(409).json({
+      message: 'Paper generation failed',
+      status: assignment.status,
+      failureReason: assignment.failureReason ?? 'Unknown error',
+      assignment,
+    });
+  }
+
   if (assignment.status === 'processing' || assignment.status === 'pending') {
     return response.status(202).json({
       status: assignment.status,

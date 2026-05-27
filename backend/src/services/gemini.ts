@@ -58,6 +58,18 @@ const buildPrompt = (assignment: CreateAssignmentInput): string => {
   ].join('\n');
 };
 
+const shouldTryNextModel = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes('404 Not Found') ||
+    message.includes('not found for API version') ||
+    message.includes('not supported for generateContent') ||
+    message.includes('429 Too Many Requests') ||
+    message.includes('Quota exceeded') ||
+    message.includes('retry in')
+  );
+};
+
 export const generateQuestionPaper = async (assignment: CreateAssignmentInput): Promise<GeneratedPaperInput> => {
   const validatedInput = createAssignmentSchema.parse(assignment);
   const apiKey = process.env.GEMINI_API_KEY;
@@ -65,17 +77,39 @@ export const generateQuestionPaper = async (assignment: CreateAssignmentInput): 
     throw new Error('GEMINI_API_KEY is missing');
   }
 
-  const client = new GoogleGenerativeAI(apiKey);
-  const model = client.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.7,
-    },
-  });
+  const requestedModel = process.env.GEMINI_MODEL?.trim();
+  const modelCandidates = [
+    requestedModel,
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
 
-  const result = await model.generateContent(buildPrompt(validatedInput));
-  const rawText = result.response.text();
-  const parsed = JSON.parse(rawText) as unknown;
-  return generatedPaperSchema.parse(parsed);
+  const client = new GoogleGenerativeAI(apiKey);
+
+  let lastError: unknown;
+  for (const modelName of modelCandidates) {
+    try {
+      const model = client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+        },
+      });
+
+      const result = await model.generateContent(buildPrompt(validatedInput));
+      const rawText = result.response.text();
+      const parsed = JSON.parse(rawText) as unknown;
+      return generatedPaperSchema.parse(parsed);
+    } catch (error) {
+      lastError = error;
+      if (!shouldTryNextModel(error)) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Unable to generate paper with any Gemini model');
 };
