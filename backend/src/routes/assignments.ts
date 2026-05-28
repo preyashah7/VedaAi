@@ -1,3 +1,4 @@
+import multer from 'multer';
 import { Router, type Request, type Response } from 'express';
 import { Types } from 'mongoose';
 import { generatePaperQueue } from '../queues/queue';
@@ -8,6 +9,10 @@ import { createAssignmentSchema } from '../lib/schemas';
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const redisClient = getRedisClient(redisUrl);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const router = Router();
 
@@ -19,8 +24,43 @@ const getIdParam = (value: string | string[] | undefined): string | null => {
   return null;
 };
 
-router.post('/', async (request: Request, response: Response) => {
-  const parsed = createAssignmentSchema.safeParse(request.body);
+router.post('/', upload.single('file'), async (request: Request, response: Response) => {
+  const body = request.body as Record<string, unknown>;
+
+  let uploadedFileContent = '';
+  if (typeof body.uploadedFileContent === 'string') {
+    uploadedFileContent = body.uploadedFileContent;
+  }
+
+  if (request.file) {
+    if (request.file.mimetype === 'text/plain') {
+      uploadedFileContent = request.file.buffer.toString('utf-8');
+    } else if (request.file.mimetype === 'application/pdf') {
+      try {
+        const pdfParse = require('pdf-parse');
+        const data = await pdfParse(request.file.buffer);
+        uploadedFileContent = data.text;
+      } catch (error) {
+        uploadedFileContent = '';
+        console.warn('PDF parse failed, proceeding without document content');
+      }
+    }
+  }
+
+  let questionTypes = body.questionTypes;
+  if (typeof questionTypes === 'string') {
+    try {
+      questionTypes = JSON.parse(questionTypes) as unknown;
+    } catch {
+      return response.status(400).json({ message: 'Validation failed', issues: { questionTypes: ['Invalid questionTypes payload'] } });
+    }
+  }
+
+  const parsed = createAssignmentSchema.safeParse({
+    ...body,
+    questionTypes,
+    uploadedFileContent,
+  });
   if (!parsed.success) {
     return response.status(400).json({ message: 'Validation failed', issues: parsed.error.flatten() });
   }

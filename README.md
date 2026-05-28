@@ -51,6 +51,37 @@ npm run dev
 
 The app expects the backend on `http://localhost:5000` and the frontend on `http://localhost:3000`.
 
+## Deploying To Render + Vercel
+
+Use Render for the backend API and worker, and Vercel for the Next.js frontend.
+
+### Render
+
+1. Create a new Blueprint from `render.yaml`.
+2. Set these environment variables on the backend service and worker:
+
+```bash
+MONGODB_URI=your_mongodb_atlas_connection_string
+REDIS_URL=your_redis_connection_string
+GEMINI_API_KEY=your_gemini_api_key
+FRONTEND_URLS=https://your-vercel-app.vercel.app,https://*.vercel.app,http://localhost:3000
+```
+
+3. Keep the backend service root at `backend/` and the worker service root at `backend/`.
+4. After deployment, copy the backend URL, for example `https://vedaai-backend.onrender.com`.
+
+### Vercel
+
+1. Create a new Vercel project from the same repository.
+2. Set the project root directory to `frontend`.
+3. Set `NEXT_PUBLIC_API_URL` to your Render backend URL.
+4. Deploy.
+
+### Notes
+
+- The frontend auth flow currently uses browser-local demo sessions, so no backend auth service is required to deploy the current version.
+- If you later add real auth, keep the same Render/Vercel split and replace the local session helper with API calls.
+
 ## Environment Variables
 
 ### Backend (`backend/.env`)
@@ -62,6 +93,7 @@ REDIS_URL=redis://localhost:6379
 GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-2.0-flash
 FRONTEND_URL=http://localhost:3000
+FRONTEND_URLS=http://localhost:3000,https://your-vercel-app.vercel.app
 ```
 
 ### Frontend (`frontend/.env.local`)
@@ -78,7 +110,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 4. Gemini returns JSON, which is parsed and validated again with Zod before saving.
 5. The generated paper is stored in MongoDB and cached in Redis for one hour.
 6. The backend marks the assignment `completed` and broadcasts a `JOB_COMPLETE` event.
-7. The frontend listens over WebSocket and redirects the user to the finished paper.
+7. The frontend listens over WebSocket and keeps the generation status visible until the paper is ready.
 
 ## Repository Layout
 

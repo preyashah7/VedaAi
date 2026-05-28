@@ -1,41 +1,40 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
 
-interface FileUploadProps {
-  selectedFileName: string | null;
-  onFileSelected: (fileName: string, fileContent: string) => void;
-}
+export const FileUpload = (): JSX.Element => {
+  const uploadedFile = useAppStore((state) => state.uploadedFile);
 
-const readTextFile = async (file: File): Promise<string> => {
-  if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-    return await file.text();
-  }
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) {
+      return;
+    }
 
-  return file.name;
-};
+    useAppStore.setState({ uploadedFile: file });
+  }, []);
 
-export const FileUpload = ({ selectedFileName, onFileSelected }: FileUploadProps): JSX.Element => {
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      if (!file) {
-        return;
-      }
+  const clearFile = useCallback(() => {
+    useAppStore.setState({ uploadedFile: null });
+  }, []);
 
-      const content = await readTextFile(file);
-      onFileSelected(file.name, content);
-    },
-    [onFileSelected]
-  );
+  const fileSizeLabel = useMemo(() => {
+    if (!uploadedFile) {
+      return '';
+    }
+
+    const sizeKb = uploadedFile.size / 1024;
+    return sizeKb >= 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(sizeKb))} KB`;
+  }, [uploadedFile]);
 
   const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'application/pdf': ['.pdf'],
       'text/plain': ['.txt'],
+      'application/pdf': ['.pdf'],
     },
     multiple: false,
     noClick: true,
@@ -57,7 +56,7 @@ export const FileUpload = ({ selectedFileName, onFileSelected }: FileUploadProps
         </div>
         <div>
           <p className="text-base font-medium text-veda-dark">Choose a file or drag & drop it here</p>
-          <p className="mt-1 text-sm text-veda-label">PNG, PDF, MP4, SVG, WEBP</p>
+          <p className="mt-1 text-sm text-veda-label">TXT or PDF documents only</p>
         </div>
         <button
           type="button"
@@ -66,9 +65,22 @@ export const FileUpload = ({ selectedFileName, onFileSelected }: FileUploadProps
         >
           Browse Files
         </button>
-        <p className="text-xs text-veda-label">Upload images of your preferred document/image</p>
-        {selectedFileName ? (
-          <div className="rounded-full bg-[#FAFAF7] px-4 py-2 text-sm text-veda-dark">{selectedFileName}</div>
+        <p className="text-xs text-veda-label">Upload a reference passage or worksheet for document-based question generation</p>
+        {uploadedFile ? (
+          <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#E5E5E5] bg-[#FAFAF7] px-4 py-3 text-left">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-veda-dark">{uploadedFile.name}</p>
+              <p className="text-xs text-veda-label">{fileSizeLabel}</p>
+            </div>
+            <button
+              type="button"
+              onClick={clearFile}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-veda-label transition hover:bg-[#F0F0F0] hover:text-veda-dark"
+              aria-label="Remove uploaded file"
+            >
+              <X size={16} />
+            </button>
+          </div>
         ) : null}
       </div>
     </div>

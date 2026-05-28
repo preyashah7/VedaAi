@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
-import { Calendar, Sparkles, ArrowLeft, ArrowRight, Plus } from 'lucide-react';
+import { Calendar, CheckCircle2, Sparkles, ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import { createAssignment } from '@/lib/api';
 import { useAppStore } from '@/store/useAppStore';
 import type { CreateAssignmentPayload } from '@/types';
@@ -42,7 +42,7 @@ const initialQuestionTypes: CreateAssignmentFormValues['questionTypes'] = [
   { type: 'Multiple Choice Questions', count: 5, marks: 1 },
 ];
 
-const buildAssignmentPayload = (values: CreateAssignmentFormValues): CreateAssignmentPayload => {
+const buildAssignmentPayload = (values: CreateAssignmentFormValues, uploadedFile: File | null): CreateAssignmentPayload => {
   const title = `${values.subject} - ${values.gradeLevel}`;
   return {
     title,
@@ -53,16 +53,18 @@ const buildAssignmentPayload = (values: CreateAssignmentFormValues): CreateAssig
     questionTypes: values.questionTypes,
     additionalInstructions: values.additionalInstructions ?? '',
     uploadedFileContent: values.uploadedFileContent ?? '',
+      uploadedFile: uploadedFile ?? null,
   };
 };
 
 export const CreateForm = (): JSX.Element => {
-  const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const generationStartedRef = useRef(false);
+  const router = useRouter();
   const currentAssignmentId = useAppStore((state) => state.currentAssignmentId);
   const jobStatus = useAppStore((state) => state.jobStatus);
+  const uploadedFile = useAppStore((state) => state.uploadedFile);
   const setCurrentAssignmentId = useAppStore((state) => state.setCurrentAssignmentId);
   const setCurrentJobId = useAppStore((state) => state.setCurrentJobId);
   const setJobStatus = useAppStore((state) => state.setJobStatus);
@@ -72,6 +74,7 @@ export const CreateForm = (): JSX.Element => {
     setCurrentAssignmentId(null);
     setCurrentJobId(null);
     setJobStatus('idle');
+    useAppStore.setState({ uploadedFile: null });
   }, [setCurrentAssignmentId, setCurrentJobId, setJobStatus]);
 
   const { control, register, handleSubmit, watch, setValue, trigger, formState: { errors, isSubmitting } } = useForm<CreateAssignmentFormValues>({
@@ -104,16 +107,16 @@ export const CreateForm = (): JSX.Element => {
   }, [questionTypes]);
 
   useEffect(() => {
-    if (jobStatus === 'completed' && currentAssignmentId) {
-      router.push(`/assignments/${currentAssignmentId}/paper`);
-    }
-  }, [currentAssignmentId, jobStatus, router]);
-
-  useEffect(() => {
     if (jobStatus === 'failed') {
       setErrorMessage('Paper generation failed. Please try again.');
     }
   }, [jobStatus]);
+
+  useEffect(() => {
+    if (generationStartedRef.current && jobStatus === 'completed' && currentAssignmentId) {
+      router.replace(`/assignments/${currentAssignmentId}/paper`);
+    }
+  }, [currentAssignmentId, jobStatus, router]);
 
   const handleNext = async (): Promise<void> => {
     const isStepValid = await trigger(['dueDate', 'questionTypes', 'additionalInstructions', 'uploadedFileContent']);
@@ -125,8 +128,9 @@ export const CreateForm = (): JSX.Element => {
   const onSubmit = handleSubmit(async (values) => {
     setErrorMessage(null);
     setJobStatus('submitting');
+    generationStartedRef.current = true;
     try {
-      const payload = buildAssignmentPayload(values);
+      const payload = buildAssignmentPayload(values, uploadedFile);
       const response = await createAssignment(payload);
       setCurrentAssignmentId(response.assignmentId);
       setCurrentJobId(response.jobId);
@@ -138,12 +142,9 @@ export const CreateForm = (): JSX.Element => {
     }
   });
 
-  const handleFileSelected = (fileName: string, fileContent: string): void => {
-    setSelectedFileName(fileName);
-    setValue('uploadedFileContent', fileContent, { shouldValidate: true, shouldDirty: true });
-  };
-
   const dateMin = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const isGenerating = jobStatus === 'submitting' || jobStatus === 'processing';
+  const isReady = jobStatus === 'completed' && Boolean(currentAssignmentId);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -165,7 +166,7 @@ export const CreateForm = (): JSX.Element => {
             <div className="space-y-6">
               <div>
                 <h2 className="mb-3 text-lg font-semibold text-veda-dark">Upload Material</h2>
-                <FileUpload selectedFileName={selectedFileName} onFileSelected={handleFileSelected} />
+                <FileUpload />
               </div>
 
               <div className="grid gap-6 md:grid-cols-2">
@@ -275,11 +276,23 @@ export const CreateForm = (): JSX.Element => {
 
           {errorMessage ? <p className="mt-4 rounded-2xl bg-[#FFF6F3] px-4 py-3 text-sm text-veda-red">{errorMessage}</p> : null}
 
-          {jobStatus === 'processing' || jobStatus === 'submitting' ? (
+          {isGenerating || isReady ? (
             <div className="mt-5 rounded-3xl border border-[#E5E5E5] bg-[#FAFAF7] p-6 text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#F1D2C8] border-t-veda-red" />
-              <p className="mt-4 text-lg font-semibold text-veda-dark">Generating your question paper...</p>
-              <p className="mt-2 text-sm text-veda-label">This may take 20-30 seconds</p>
+              {isGenerating ? (
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#F1D2C8] border-t-veda-red" />
+              ) : (
+                <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-[#EAF6EE] text-[#1F7A3D]">
+                  <CheckCircle2 size={22} />
+                </div>
+              )}
+              <p className="mt-4 text-lg font-semibold text-veda-dark">
+                {isGenerating ? 'Generating your question paper...' : 'Your paper is ready.'}
+              </p>
+              <p className="mt-2 text-sm text-veda-label">
+                {isGenerating
+                  ? 'This usually takes 20-30 seconds. You can stay on this page while we finish.'
+                  : 'Redirecting to the paper view now.'}
+              </p>
             </div>
           ) : null}
 

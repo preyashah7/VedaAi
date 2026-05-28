@@ -19,7 +19,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--veda-bg);
+  background: linear-gradient(180deg, #F8F4EE 0%, #F3F1EA 100%);
   color: var(--veda-dark);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -38,4 +38,19 @@ textarea {
 
 ::selection {
   background: rgba(192, 53, 10, 0.18);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(48, 48, 48, 0.18);
+  border: 2px solid rgba(248, 244, 238, 0.9);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
 }

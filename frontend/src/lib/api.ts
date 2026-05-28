@@ -22,11 +22,35 @@ export const fetchAssignments = async (): Promise<Assignment[]> => {
 };
 
 export const createAssignment = async (payload: CreateAssignmentPayload): Promise<CreateAssignmentResponse> => {
-  const response = await fetch(`${apiBaseUrl}/api/assignments`, {
-    method: 'POST',
-    headers: jsonHeaders,
-    body: JSON.stringify(payload),
-  });
+  const hasFile = payload.uploadedFile instanceof File;
+
+  const response = await fetch(
+    `${apiBaseUrl}/api/assignments`,
+    hasFile
+      ? {
+          method: 'POST',
+          body: (() => {
+            const formData = new FormData();
+            formData.append('title', payload.title);
+            formData.append('schoolName', payload.schoolName);
+            formData.append('subject', payload.subject);
+            formData.append('gradeLevel', payload.gradeLevel);
+            formData.append('dueDate', payload.dueDate);
+            formData.append('questionTypes', JSON.stringify(payload.questionTypes));
+            formData.append('additionalInstructions', payload.additionalInstructions ?? '');
+            formData.append('uploadedFileContent', payload.uploadedFileContent ?? '');
+            if (payload.uploadedFile) {
+              formData.append('file', payload.uploadedFile);
+            }
+            return formData;
+          })(),
+        }
+      : {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(payload),
+        }
+  );
   await ensureOk(response);
   return (await response.json()) as CreateAssignmentResponse;
 };

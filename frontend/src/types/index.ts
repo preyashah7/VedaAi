@@ -1,6 +1,13 @@
 export type JobStatus = 'idle' | 'submitting' | 'processing' | 'completed' | 'failed';
 export type AssignmentStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  schoolName: string;
+}
+
 export interface QuestionType {
   type: string;
   count: number;
@@ -69,6 +76,7 @@ export interface CreateAssignmentPayload {
   questionTypes: QuestionType[];
   additionalInstructions?: string;
   uploadedFileContent?: string;
+  uploadedFile?: File | null;
 }
 
 export interface CreateAssignmentResponse {
@@ -81,6 +89,7 @@ export interface AssignmentPaperResponse {
   assignment?: Assignment;
   paper?: GeneratedPaper;
   message?: string;
+  failureReason?: string;
 }
 
 export interface AppState {
@@ -89,6 +98,7 @@ export interface AppState {
   currentAssignmentId: string | null;
   jobStatus: JobStatus;
   generatedPaper: GeneratedPaper | null;
+  uploadedFile: File | null;
   setAssignments: (assignments: Assignment[]) => void;
   setJobStatus: (status: JobStatus) => void;
   setGeneratedPaper: (paper: GeneratedPaper | null) => void;

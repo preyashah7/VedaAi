@@ -7,6 +7,7 @@ export const useAppStore = create<AppState>((set) => ({
   currentAssignmentId: null,
   jobStatus: 'idle',
   generatedPaper: null,
+  uploadedFile: null,
   setAssignments: (assignments: Assignment[]) => set({ assignments }),
   setJobStatus: (jobStatus: JobStatus) => set({ jobStatus }),
   setGeneratedPaper: (generatedPaper: GeneratedPaper | null) => set({ generatedPaper }),

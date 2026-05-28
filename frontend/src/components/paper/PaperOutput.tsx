@@ -142,8 +142,8 @@ export const PaperOutput = ({ assignmentId }: PaperOutputProps): JSX.Element => 
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="flex flex-col gap-4 rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-soft lg:flex-row lg:items-center lg:justify-between">
-        <p className="text-sm leading-6 text-veda-label">
+      <div className="flex flex-col gap-4 rounded-3xl border border-[#E5E5E5] bg-white/95 p-5 shadow-soft backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:p-6">
+        <p className="max-w-3xl text-sm leading-6 text-veda-label md:text-[15px]">
           Certainly! {paper.subject} here are customized Question Paper for your {paper.gradeLevel} {paper.subject} classes on the chapters your school requested.
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -176,25 +176,25 @@ export const PaperOutput = ({ assignmentId }: PaperOutputProps): JSX.Element => 
         </div>
       ) : null}
 
-      <div ref={paperRef} className="mx-auto max-w-[800px] rounded-3xl bg-white p-4 shadow-soft md:p-10 print:shadow-none">
+      <div ref={paperRef} className="mx-auto max-w-[860px] rounded-[32px] border border-[#E9E1D8] bg-white px-5 py-8 shadow-[0_14px_50px_rgba(18,15,11,0.08)] md:px-14 md:py-12 print:border-0 print:shadow-none">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-veda-dark md:text-2xl">{paper.schoolName}</h1>
-          <p className="mt-1 text-sm text-veda-dark md:text-[14px]">Subject: {paper.subject}</p>
-          <p className="text-sm text-veda-dark md:text-[14px]">Class: {paper.gradeLevel}</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-veda-dark md:text-[28px]">{paper.schoolName}</h1>
+          <p className="mt-1 text-sm text-veda-dark md:text-[15px]">Subject: {paper.subject}</p>
+          <p className="text-sm text-veda-dark md:text-[15px]">Class: {paper.gradeLevel}</p>
         </div>
 
-        <div className="my-4 border-t border-[#D9D9D9]" />
+        <div className="my-5 border-t border-[#D9D9D9]" />
 
         <div className="flex flex-col gap-2 text-sm text-veda-dark md:flex-row md:items-center md:justify-between">
           <span>Time Allowed: {paper.timeAllowed}</span>
           <span>Maximum Marks: {paper.maxMarks}</span>
         </div>
 
-        <div className="my-4 border-t border-[#D9D9D9]" />
+        <div className="my-5 border-t border-[#D9D9D9]" />
 
-        <p className="text-[13px] italic leading-6 text-veda-label">{paper.generalInstructions}</p>
+        <p className="text-[13px] italic leading-6 text-veda-label md:text-[14px]">{paper.generalInstructions}</p>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
           <label className="block text-sm text-veda-dark">
             Name:{' '}
             <input type="text" className="w-full border-0 border-b border-[#303030] bg-transparent px-0 py-1 outline-none" />
@@ -209,7 +209,7 @@ export const PaperOutput = ({ assignmentId }: PaperOutputProps): JSX.Element => 
           </label>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-10">
           {paper.sections.map((section) => (
             <QuestionSection key={section.title} section={section} />
           ))}
